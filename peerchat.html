@@ -1,0 +1,98 @@
+<head>
+  <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.2.1/mustache.min.js"></script>
+  <script src="peerchat.js"></script>
+</head>
+<body>
+<script>
+var peerChat = new PeerChat(PUTYOURAPIKEYHERE);
+
+var mustacheTemplate = '                              \
+<div class="row">                                     \
+  {{ #sent_by_us }}                                   \
+    <div style="margin-left:80px;" class="col-md-8">  \
+      <p>                                             \
+        {{ time }}</span> from {{ name }}             \
+      </p>                                            \
+      <p class="alert alert-info text">               \
+        {{ text }}                                    \
+      </p>                                            \
+    </div>                                            \
+  {{ /sent_by_us }}                                   \
+  <!-- messages from users -->                        \
+  {{ ^sent_by_us }}                                   \
+    <div class="col-md-8">                            \
+      <p>                                             \
+        {{ time }}</span></a> from {{ name }}         \
+      </p>                                            \
+      <p class="alert alert-success text">            \
+        {{ text }}                                    \
+      </p>                                            \
+    </div>                                            \
+  {{ /sent_by_us }}                                   \
+</div>                                                \
+';
+
+function sendMessageFromHTML() {
+  peerChat.send(document.getElementById('messageInput').value);
+  document.getElementById('messageInput').value = '';
+}
+
+function connectTo() {
+  friendName = document.getElementById('connectTo').value;
+  console.log("friendName "+friendName);
+  peerChat.openTextConnection(friendName);
+}
+
+function updateName() {
+  peerChat.setName(document.getElementById('nameHeader').value);
+}
+
+function handleIntroduction(data) {
+  document.getElementById('connectTo').value = data.introduce;
+}
+
+function handleMessage(messageData) {
+  if(messageData.introduce != null)
+    document.getElementById('messageLog').innerHTML = 'Connected to <font color=red>'+messageData.introduce+'</font><br>' + document.getElementById('messageLog').innerHTML;
+  else {
+    document.getElementById('messageLog').innerHTML = filloutHTMLTemplate(messageData) + '<br>' + document.getElementById('messageLog').innerHTML;
+  }
+}
+
+function messageHTMLFromData(data) {
+  return '<font color=red>'+data.name+':<font> <font color=black>'+data.text+'</font>';
+}
+
+function filloutHTMLTemplate(messageData) {
+  var sent_by_us = (messageData.name == peerChat.connectionData.name);
+  var templateData = {time: Date(messageData.time), text: messageData.text, name: messageData.name, sent_by_us: sent_by_us}
+  return Mustache.render(mustacheTemplate, templateData)
+}
+
+peerChat.onMessage(handleMessage);
+peerChat.onConnection(handleIntroduction);
+
+</script>
+
+Your Name:<input id="nameHeader" type='text'></text>
+<br>
+Connect To:<input id="connectTo" type='text'></text>
+<br>
+<br>
+<div class="col-md-8">
+  Enter Message:
+<input id="messageInput" type='text'></text>
+<br>
+Message Log:
+<br>
+<div id="messageLog"></div>
+</div>
+
+<script>
+document.getElementById('nameHeader').onchange = updateName;
+document.getElementById('connectTo').onchange = connectTo;
+document.getElementById('messageInput').onchange = sendMessageFromHTML;
+</script>
+</body>
